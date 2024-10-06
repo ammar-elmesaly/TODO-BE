@@ -1,6 +1,8 @@
+import os
+import json
 import tkinter as tk
-from tkinter import ttk
-from tkinter import StringVar, IntVar
+from tkinter import ttk, font
+from tkinter import StringVar, IntVar, BooleanVar
 
 # GLOBAL VARIABLES / CONSTANTS
 
@@ -24,14 +26,31 @@ COLOR = {
     "high_priority": "#dc3545",
     "error": "#dc3545"
 }
-
 def main():
     
+    # just check if the json file is empty or exists
+    is_first_time = True
+
+    if os.path.exists("tasks/0.json"):
+
+        is_first_time = False
+        with open("tasks/0.json", "r") as json_file:
+            try:
+                json.load(json_file)
+            except:  # if the json file is empty
+                is_first_time = True
+
     # Local Functions
-    def grid_window(window):  # This function configures grid weight
-        for i in range(GRID_DIM):
-            window.grid_rowconfigure(i, weight=1)  # ith Row
-            window.grid_columnconfigure(i, weight=1)  # ith Column
+    def grid_window(window, grid_dim=GRID_DIM, reset=False):  # This function configures grid weight
+        if reset:
+            cell_weight = 0  # resetting grid configuration
+            for widget in window.winfo_children():  # destroys widgets
+                widget.destroy()
+        else:
+            cell_weight = 1
+        for i in range(grid_dim):
+            window.grid_rowconfigure(i, weight=cell_weight)  # ith Row
+            window.grid_columnconfigure(i, weight=cell_weight)  # ith Column
 
     
     def create_task():
@@ -77,8 +96,50 @@ def main():
                 return task_input_error(0)
             if priority_var.get() == -1:
                 return task_input_error(1)
-            print(task_name.get(), priority_var.get())
+            
+            # checking if the directory for storing tasks exists
+
+            if not os.path.exists("tasks"):
+                os.makedirs("tasks")
+            
+            if not os.path.isfile("tasks/0.json"):
+                data = []
+                # initializing data for storing json
+            else:
+                with open("tasks/0.json", "r") as json_file:
+                    try:
+                        data = json.load(json_file)
+                    except:  # if the user trolls and deletes the json data
+                        data = []
+            
+            # making task id
+            if data == []:
+                task_id = 0
+            else:
+                task_id = data[-1]["id"] + 1
+
+            # the new task to write
+            new_task = {
+                "name": task_name.get(),
+                "priority": priority_var.get(),
+                "done": 0,
+                "id": task_id
+            }
+
+            # appending new_task in the data list
+            data.append(new_task)
+
+            # write the new task in the json file
+            with open("tasks/0.json", "w") as json_file:
+                json.dump(data, json_file, indent=4)
+            
             create_task_window.destroy()
+
+            # clear the elements if first time
+
+            if is_first_time:
+                grid_window(window, reset=True)
+                display_tasks()
 
 
         create_task_window = tk.Toplevel(window)
@@ -122,6 +183,7 @@ def main():
         save_task_btn.grid(row=2, column=1, sticky="N")
 
         task_input.focus_force()
+    
     # Configure Window
 
     window = tk.Tk()
@@ -139,29 +201,95 @@ def main():
     style.configure('low_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["low_priority"])
     style.configure('mid_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["mid_priority"])
     style.configure('high_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["high_priority"])
+    def first_time():  # this function is called when json file is empty or doesn't exist
+        # Configure grid 
 
-    # Configure grid
+        grid_window(window)
 
-    grid_window(window)
+        welcome_label = ttk.Label(window, text="Welcome to Todo Be!", style="main_large.TLabel")
+        welcome_label.grid(row=0, column=1, sticky="")
+        create_task_btn = tk.Button(window,
+                        command=create_task,
+                        bg=COLOR["primary_btn"]["bg"],
+                        fg=COLOR["primary_btn"]["fg"],
+                        font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
+                        relief='flat',
+                        text='Create',
+                        pady=2,
+                        padx=4)
+        create_task_btn.grid(row=2, column=1, sticky="N")
 
-    welcome_label = ttk.Label(window, text="Welcome to Todo Be!", style="main_large.TLabel")
-    welcome_label.grid(row=0, column=1, sticky="")
-    create_task_btn = tk.Button(window,
-                    command=create_task,
-                    bg=COLOR["primary_btn"]["bg"],
-                    fg=COLOR["primary_btn"]["fg"],
-                    font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
-                    relief='flat',
-                    text='Create',
-                    pady=2,
-                    padx=4)
-    create_task_btn.grid(row=2, column=1, sticky="N")
+        add_task_label = ttk.Label(window, text="First of all, please create your first task!", style="main.TLabel")
+        add_task_label.grid(row=1, column=1, sticky="")
+    
+    def display_tasks():
 
-    add_task_label = ttk.Label(window, text="First of all, please create your first task!", style="main.TLabel")
-    add_task_label.grid(row=1, column=1, sticky="")
+        # strike through font for done tasks
 
+        STRIKE_THROUGH_FONT = font.Font(family=GLOBAL_FONT, size=GLOBAL_FONT_SIZE_LARGE, overstrike=True)
+        style.configure('main_strike_large.TLabel', font=STRIKE_THROUGH_FONT, foreground=PALETTE[4])
+        load_strike=ttk.Label(window, style="main_strike_large.TLabel")  # somehow without this line the whole strike through thing doesn't work
+        # if there is no done tasks
+        
+        # Update the json file with checkbox state
+        def update_tasks(id):
+            with open("tasks/0.json", "w") as json_file:
+                data[id]["done"] = done_var_dict[id].get()
+                json.dump(data, json_file, indent=4)  # update the json file
+            
+            # Update the label font based on checkbox state (strikethrough if done, normal otherwise)
+            if done_var_dict[id].get() == 1:
+                task_label_dict[id].configure(style="main_strike_large.TLabel")  # Apply strikethrough
+            else:
+                task_label_dict[id].configure(style="main_large.TLabel")  # Remove strikethrough
+
+        
+        with open("tasks/0.json", "r") as json_file:
+            data = json.load(json_file)
+            done_var_dict = {}  # a dict of done variables (storing the state of each checkbox)
+            task_label_dict = {} # a dict of labels of checkboxes
+            # iterate through checkboxes
+            for i in range(len(data)):
+
+                task = data[i]
+                done_var_dict[i] = IntVar(value=data[i]["done"])
+                
+                if data[i]["done"] == 1:
+                    task_label = ttk.Label(window, style="main_strike_large.TLabel", text=f"{i+1}. {task["name"]}  ")
+                else:
+                    task_label = ttk.Label(window, style="main_large.TLabel", text=f"{i+1}. {task["name"]}  ")
+
+                task_label.grid(row=i, column=0, sticky="w")
+                task_label_dict[i] = task_label
+
+                task_checkbox = ttk.Checkbutton(window, variable=done_var_dict[i], takefocus=False, command=lambda i=i: update_tasks(i))
+                task_checkbox.grid(row=i, column=1, sticky="w")
+
+                delete_task_btn = tk.Button(window,
+                                command=create_task,
+                                fg=COLOR["error"],
+                                font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
+                                relief='flat',
+                                text='✕'
+                                ) 
+                window.grid_columnconfigure(2, weight=1)
+                delete_task_btn.grid(row=i, column=2, sticky="e")
+
+            add_task_btn = tk.Button(window,
+                            command=create_task,
+                            bg=COLOR["primary_btn"]["bg"],
+                            fg=COLOR["primary_btn"]["fg"],
+                            font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
+                            relief='flat',
+                            text='Add a task',
+                            pady=2,
+                            padx=4)
+            add_task_btn.grid(row=i+1, column=2, sticky="")
+
+    if is_first_time: first_time()
+    else: display_tasks()
+    
     window.mainloop()
-
 
 if __name__ == "__main__":
     main()
