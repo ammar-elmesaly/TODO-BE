@@ -9,6 +9,8 @@ from tkinter import StringVar, IntVar
 GLOBAL_FONT = "Segoe UI"
 GLOBAL_FONT_SIZE = 20
 GLOBAL_FONT_SIZE_LARGE = 28
+GLOBAL_FONT_SIZE_MID = 24
+GLOBAL_FONT_SIZE_SMALL = 18
 GRID_DIM = 3  # 3x3 Grid System (Dimensions)
 PALETTE = ["#72BF78", "#A0D683", "#D3EE98", "#FEFF9F", '#6C757D']
 COLOR = {
@@ -49,7 +51,7 @@ def main():
     def grid_window(window, grid_dim=GRID_DIM, reset=False):  # This function configures grid weight
         if reset:
             cell_weight = 0  # resetting grid configuration
-            refresh_tasks(window)  # kills all widgets
+            refresh_tasks(window)  # kills all widget8
 
         else:
             cell_weight = 1
@@ -61,9 +63,11 @@ def main():
     def create_task():
         
         def task_input_error(error):  # this function is called when there is an error with user input
-            # Error Codes
+            # ====================== Error Codes ======================
             # no task name is 0
             # no priority is 1
+            # character limit exceeded is 2
+            # =========================================================
 
             # Configuring error_task_window
 
@@ -93,6 +97,8 @@ def main():
                 error_task_label.configure(text="Please enter the task name.")
             elif error == 1:
                 error_task_label.configure(text="Please select a priority.")
+            elif error == 2:
+                error_task_label.configure(text="Name of the task must not exceed 60 characters.")
 
 
         def save_task():
@@ -101,6 +107,8 @@ def main():
                 return task_input_error(0)
             if priority_var.get() == -1:
                 return task_input_error(1)
+            if len(task_name.get()) > 60:
+                return task_input_error(2)
             
             # checking if the directory for storing tasks exists
 
@@ -187,7 +195,7 @@ def main():
     
 
     # this function helps truncate strings longer than 18 characters
-    def truncate_string(text, max_length=18):
+    def truncate_string(text, max_length=20):
         if len(text) > max_length:
             return text[:max_length-3] + '...'  # Reserve space for '...'
         return text
@@ -206,10 +214,15 @@ def main():
     style = ttk.Style()
     style.configure('main.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE), foreground=PALETTE[4])
     style.configure('error.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_LARGE), foreground=COLOR["error"])
+    style.configure('error_small.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_SMALL), foreground=COLOR["error"])
     style.configure('main_large.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_LARGE), foreground=PALETTE[4])
+    style.configure('main_mid.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_MID), foreground=PALETTE[4])
     style.configure('low_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["low_priority"])
     style.configure('mid_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["mid_priority"])
     style.configure('high_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["high_priority"])
+    style.configure('low_priority.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["low_priority"])
+    style.configure('mid_priority.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["mid_priority"])
+    style.configure('high_priority.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["high_priority"])
     
     def first_time():  # this function is called when json file is empty or doesn't exist
         # Configure grid 
@@ -239,12 +252,15 @@ def main():
 
 
     def display_tasks():
+        # TODO TODO TODO
+        # XXX Add discription
+        # XXX Add edit functionality
 
         # strike through font for done tasks
 
-        STRIKE_THROUGH_FONT = font.Font(family=GLOBAL_FONT, size=GLOBAL_FONT_SIZE_LARGE, overstrike=True)
-        style.configure('main_strike_large.TLabel', font=STRIKE_THROUGH_FONT, foreground=PALETTE[4])
-        load_strike=ttk.Label(window, style="main_strike_large.TLabel")  # somehow without this line the whole strike through thing doesn't work
+        STRIKE_THROUGH_FONT = font.Font(family=GLOBAL_FONT, size=GLOBAL_FONT_SIZE_MID, overstrike=True)
+        style.configure('main_strike_mid.TLabel', font=STRIKE_THROUGH_FONT, foreground=PALETTE[4])
+        load_strike=ttk.Label(window, style="main_strike_mid.TLabel")  # somehow without this line the whole strike through thing doesn't work
         # if there is no done tasks
 
         # Update the json file with checkbox state
@@ -255,11 +271,12 @@ def main():
             
             # Update the label font based on checkbox state (strikethrough if done, normal otherwise)
             if done_var_dict[id].get() == 1:
-                task_label_dict[id].configure(style="main_strike_large.TLabel")  # Apply strikethrough
+                task_label_dict[id].configure(style="main_strike_mid.TLabel")  # Apply strikethrough
             else:
-                task_label_dict[id].configure(style="main_large.TLabel")  # Remove strikethrough
+                task_label_dict[id].configure(style="main_mid.TLabel")  # Remove strikethrough
 
-        def delete_task(id):
+        def delete_task(id, confirm_delete_window):
+            confirm_delete_window.destroy()
             task_label_dict[id].destroy()
             check_label_dict[id].destroy()
             delete_task_dict[id].destroy()
@@ -276,8 +293,47 @@ def main():
                     first_time()
                 else:
                     display_tasks()
+        
+
+        def confirm_delete(id):
+            confirm_delete_window = tk.Toplevel(window)
+            confirm_delete_window.title("Confirm Delete")
+            confirm_delete_window.minsize(task_label_dict[id].winfo_width() + 600, 300)  # fine tuning the minimum size relative to the task label width
+            # Make the window modal (user must close it before interacting with main window)
+            confirm_delete_window.grab_set()
+            confirm_delete_window.transient(window)  # Keep the deletion confirm window on top of the main window
+
+            confirm_delete_label = ttk.Label(confirm_delete_window,
+                                            style="error.TLabel",
+                                            text=f"Are you sure to delete this task ({truncate_string(data[id]["name"])})?")
+            confirm_delete_label.place(relx=0.5, rely=0.2, anchor="center")
+
+            confirm_delete_btn = tk.Button(confirm_delete_window,
+                    command=lambda:delete_task(id, confirm_delete_window),
+                    bg=COLOR["error"],
+                    fg=COLOR["primary_btn"]["fg"],
+                    font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
+                    relief='flat',
+                    text='OK',
+                    pady=1,
+                    padx=1)
+            confirm_delete_btn.place(relx=0.43, rely=0.6, anchor="center")
+
+            no_confirm_btn = tk.Button(confirm_delete_window,
+                    command=confirm_delete_window.destroy,
+                    bg=COLOR["primary_btn"]["bg"],
+                    fg=COLOR["primary_btn"]["fg"],
+                    font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
+                    relief='flat',
+                    text='NO',
+                    pady=1,
+                    padx=1)
+            no_confirm_btn.place(relx=0.57, rely=0.6, anchor="center")
+            
+
 
         # add a task button
+
         add_task_btn = tk.Button(window,
                         command=create_task,
                         bg=COLOR["primary_btn"]["bg"],
@@ -301,27 +357,48 @@ def main():
                 done_var_dict[i] = IntVar(value=data[i]["done"])
                 
                 if data[i]["done"] == 1:
-                    task_label = ttk.Label(window, style="main_strike_large.TLabel", text=f"{i+1}. {truncate_string(task["name"])}  ")
+                    task_label = ttk.Label(window, style="main_strike_mid.TLabel", text=f"{i+1}. {truncate_string(task["name"])}  ")
                 else:
-                    task_label = ttk.Label(window, style="main_large.TLabel", text=f"{i+1}. {truncate_string(task["name"])}  ")
+                    task_label = ttk.Label(window, style="main_mid.TLabel", text=f"{i+1}. {truncate_string(task["name"])}  ")
 
                 task_label_dict[i] = task_label
-                task_label.place(relx=0.01, rely=0.1 * (i+2), anchor="w")
+                task_label.place(relx=0.01, rely=0.075 * (i+2.8), anchor="w")
 
                 task_checkbox = ttk.Checkbutton(window, variable=done_var_dict[i], takefocus=False, command=lambda i=i: update_task(i))
                 check_label_dict[i] = task_checkbox
-                task_checkbox.place(relx=0.5, rely=0.1 * (i+2), anchor="center")
+                task_checkbox.place(relx=0.5, rely=0.075 * (i+2.8), anchor="center")
 
+                priority_task_label = ttk.Label(window)
+                if data[i]["priority"] == 0:  # Low priority
+                    priority_task_label.configure(style="low_priority.TLabel", text="0")
+                elif data[i]["priority"] == 1:  # Middle priority
+                    priority_task_label.configure(style="mid_priority.TLabel", text="!")
+                else:  # High priority
+                    priority_task_label.configure(style="high_priority.TLabel", text="!!")
+                priority_task_label.place(relx=0.9, rely=0.075 * (i+2.8), anchor="center")
+                
                 delete_task_btn = tk.Button(window,
-                                command=lambda i=i: delete_task(i),
+                                command=lambda i=i: confirm_delete(i),
                                 fg=COLOR["error"],
                                 font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
                                 relief='flat',
                                 text='✕'
                                 ) 
                 delete_task_dict[i] = delete_task_btn
-                delete_task_btn.place(relx=0.95, rely=0.1 * (i+2), anchor="center")
+                delete_task_btn.place(relx=0.95, rely=0.075 * (i+2.8), anchor="center")
 
+        # if reaches task limit
+
+        # ====================================================================================================
+        # This annoying limit exists because tkinter is annoying and adding a scrollbar is annoying in tkinter
+        # ====================================================================================================
+        
+        TASK_LIMIT = 11
+        if len(task_label_dict) == TASK_LIMIT:
+            add_task_btn.configure(state="disabled")
+            limit_reached_label = ttk.Label(window, style="error_small.TLabel", text="(You reached the task limit)")
+            limit_reached_label.place(relx=0.8, rely= 0.1, anchor="center")
+    
     if is_first_time: first_time()
     else: display_tasks()
     
