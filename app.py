@@ -74,6 +74,8 @@ def main():
             error_task_window = tk.Toplevel(create_task_window)
             error_task_window.title("Error")
             error_task_window.minsize(600,300)
+            error_task_window.resizable(False, False)  # Disable resizing window
+
             grid_window(error_task_window)
             # Make the window modal (user must close it before interacting with main window)
             error_task_window.grab_set()
@@ -132,6 +134,12 @@ def main():
                 "done": 0
             }
 
+            discription_text = task_discription.get("1.0", tk.END).replace("\n", "")
+            if not discription_text.isspace() and not discription_text == "":
+                new_task["discription"] = task_discription.get("1.0", tk.END)
+            else:
+                new_task["discription"] = ""
+
             # appending new_task in the data list
             data.append(new_task)
 
@@ -154,11 +162,11 @@ def main():
         create_task_window = tk.Toplevel(window)
         create_task_window.title("Create a task")
         create_task_window.minsize(800,600)  # Minumum width and height
-        grid_window(create_task_window)
+        create_task_window.resizable(False, False)  # Disable resizing window
         task_name = StringVar()
 
         name_label = ttk.Label(create_task_window, style="main.TLabel", text="Name")  # Just indicating that this is a name input
-        name_label.grid(row=0, column=0, sticky="e")
+        name_label.place(relx=0.25, rely=0.1, anchor="center")
 
         task_input = tk.Entry(create_task_window,
                     bg=COLOR["primary_entry"]["bg"],
@@ -167,18 +175,29 @@ def main():
                     font=(GLOBAL_FONT, GLOBAL_FONT_SIZE),
                     textvariable=task_name
                     )
-        task_input.grid(row=0, column=1, sticky="")
+        task_input.place(relx=0.5, rely=0.1, anchor="center")
 
         priority_var = IntVar(value=-1)  # initializing IntVar with -1 so it doesn't automatically select priority
 
         task_priority_low = ttk.Radiobutton(create_task_window, variable=priority_var, style="low_priority.TRadiobutton", text="Low-priority", value=0)
-        task_priority_low.grid(row=1, column=0, sticky="e")
+        task_priority_low.place(relx=0.2, rely=0.225, anchor="center")
 
         task_priority_mid = ttk.Radiobutton(create_task_window, variable=priority_var, style="mid_priority.TRadiobutton", text="Middle-priority", value=1)
-        task_priority_mid.grid(row=1, column=1, sticky="")
+        task_priority_mid.place(relx=0.5, rely=0.225, anchor="center")
         
         task_priority_high = ttk.Radiobutton(create_task_window, variable=priority_var, style="high_priority.TRadiobutton", text="High-priority", value=2)
-        task_priority_high.grid(row=1, column=2, sticky="w")
+        task_priority_high.place(relx=0.8, rely=0.225, anchor="center")
+
+        discription_label = ttk.Label(create_task_window, style="main.TLabel", text="Discription (Optional)")  # Just indicating that this is a name input
+        discription_label.place(relx=0.283, rely=0.35, anchor="center")
+
+        task_discription = tk.Text(create_task_window,
+                                height=5,
+                                width=35,
+                                fg=PALETTE[4],
+                                font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_MID)
+                                )
+        task_discription.place(relx=0.5, rely=0.6, anchor="center")
 
         save_task_btn = tk.Button(create_task_window,
                     command=save_task,
@@ -189,7 +208,7 @@ def main():
                     text='Save',
                     pady=2,
                     padx=4)
-        save_task_btn.grid(row=2, column=1, sticky="N")
+        save_task_btn.place(relx=0.5, rely=0.9, anchor="center")
 
         task_input.focus_force()
     
@@ -217,6 +236,7 @@ def main():
     style.configure('error_small.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_SMALL), foreground=COLOR["error"])
     style.configure('main_large.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_LARGE), foreground=PALETTE[4])
     style.configure('main_mid.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_MID), foreground=PALETTE[4])
+    style.configure('discription.TLabel', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_MID), foreground=PALETTE[4], background=PALETTE[3])
     style.configure('low_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["low_priority"])
     style.configure('mid_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["mid_priority"])
     style.configure('high_priority.TRadiobutton', font=(GLOBAL_FONT, GLOBAL_FONT_SIZE, "bold"), foreground=COLOR["high_priority"])
@@ -253,14 +273,16 @@ def main():
 
     def display_tasks():
         # TODO TODO TODO
-        # XXX Add discription
         # XXX Add edit functionality
 
         # strike through font for done tasks
-
         STRIKE_THROUGH_FONT = font.Font(family=GLOBAL_FONT, size=GLOBAL_FONT_SIZE_MID, overstrike=True)
         style.configure('main_strike_mid.TLabel', font=STRIKE_THROUGH_FONT, foreground=PALETTE[4])
         load_strike=ttk.Label(window, style="main_strike_mid.TLabel")  # somehow without this line the whole strike through thing doesn't work
+        
+        # underline discription button
+        UNDERLINE_FONT = font.Font(family=GLOBAL_FONT, size=GLOBAL_FONT_SIZE_SMALL, underline=True) 
+
         # if there is no done tasks
 
         # Update the json file with checkbox state
@@ -280,6 +302,12 @@ def main():
             task_label_dict[id].destroy()
             check_label_dict[id].destroy()
             delete_task_dict[id].destroy()
+            if show_discription_dict[id] != None:
+                show_discription_dict[id].destroy()
+            else:
+                del show_discription_dict[id]
+            priority_task_dict[id].destroy()
+
             with open(JSON_FILE_PATH, "r+") as json_file:
                 data = json.load(json_file)
                 del data[id]
@@ -329,8 +357,31 @@ def main():
                     pady=1,
                     padx=1)
             no_confirm_btn.place(relx=0.57, rely=0.6, anchor="center")
-            
+        
+        # show discription of task
 
+        def show_discription(id):
+            discription_text = data[id]["discription"]
+            discription_window = tk.Toplevel(window)
+            discription_window.title("Discription")
+            discription_window.minsize(800, 600)
+            discription_window.resizable(False, False)  # Disable resizing window
+
+            task_name_label = ttk.Label(discription_window, style="main_large.TLabel", text=truncate_string(data[id]["name"], max_length=24))
+            task_name_label.place(relx=0.5, rely=0.05, anchor="center")
+
+            discription_label = tk.Text(
+                discription_window,
+                width=45,
+                height=11,
+                fg=PALETTE[4],
+                bg=PALETTE[2],
+                font=(GLOBAL_FONT, GLOBAL_FONT_SIZE_MID),
+                relief="flat"
+            )
+            discription_label.insert(tk.END, discription_text)
+            discription_label.config(state="disabled")
+            discription_label.place(relx=0.5, rely=0.52, anchor="center")
 
         # add a task button
 
@@ -351,6 +402,8 @@ def main():
             task_label_dict = {}  # a dict of labels of checkboxes
             delete_task_dict = {}  # a dict of delete buttons of checkboxes
             check_label_dict = {}  # a dict of checkboxes
+            show_discription_dict = {}  # a dict of show discription buttons
+            priority_task_dict = {}  # a dict of priority label
             # iterate through checkboxes
             for i in range(len(data)):
                 task = data[i]
@@ -368,6 +421,23 @@ def main():
                 check_label_dict[i] = task_checkbox
                 task_checkbox.place(relx=0.5, rely=0.075 * (i+2.8), anchor="center")
 
+                if task["discription"] != "":
+
+                    show_discription_btn = tk.Button(
+                        window,
+                        command=lambda i=i:show_discription(i),
+                        font=UNDERLINE_FONT,
+                        fg=COLOR["low_priority"],
+                        text="Show discription",
+                        relief="flat"
+
+                    )
+                    show_discription_dict[i] = show_discription_btn 
+                    show_discription_btn.place(relx=0.63, rely=0.075 * (i+2.8), anchor="center")
+
+                else:
+                    show_discription_dict[i] = None
+
                 priority_task_label = ttk.Label(window)
                 if data[i]["priority"] == 0:  # Low priority
                     priority_task_label.configure(style="low_priority.TLabel", text="0")
@@ -375,6 +445,7 @@ def main():
                     priority_task_label.configure(style="mid_priority.TLabel", text="!")
                 else:  # High priority
                     priority_task_label.configure(style="high_priority.TLabel", text="!!")
+                priority_task_dict[i] = priority_task_label
                 priority_task_label.place(relx=0.9, rely=0.075 * (i+2.8), anchor="center")
                 
                 delete_task_btn = tk.Button(window,
