@@ -272,10 +272,7 @@ def main():
         for widget in window.winfo_children():
             widget.destroy()
 
-
     def display_tasks():
-        # TODO TODO TODO
-        # XXX Add edit functionality
 
         # strike through font for done tasks
         STRIKE_THROUGH_FONT = font.Font(family=GLOBAL_FONT, size=GLOBAL_FONT_SIZE_MID, overstrike=True)
