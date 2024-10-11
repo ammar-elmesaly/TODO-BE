@@ -36,9 +36,9 @@ Then tkinter style is configured for each of the different widgets, like labels 
 
 After that, a function is called `first_time()` if there are no tasks in the json file, and `display_tasks()` if there are tasks to display.
 
-In `display_tasks()` lives a nested function `update_task()`, whose whole purpose is to update the state of a particular task when the checkbox is clicked (done or undone); it also updates the state in the database.
+In `display_tasks()` lives a nested function `update_task(id)`, whose whole purpose is to update the state of a particular task when the checkbox is clicked (done or undone); it also updates the state in the database.
 
-Also, you can see `delete_task(id)` and 'confirm_delete(id),` which manage task deletion. The way I am storing widgets is by making a dict for each widget type. For example, a dict for buttons, labels, etc. And accessing them using the widget ID, which is basically the widget's order from 0 to up.
+Also, you can see `delete_task(id)` and `confirm_delete(id)`, which manage task deletion. The way I am storing widgets is by making a dict for each widget type. For example, a dict for buttons, labels, etc. And accessing them using the widget ID, which is basically the widget's order from 0 to up.
 
 `edit_task(id)` is used to edit task content from name to description to priority.
 
