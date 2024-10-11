@@ -34,3 +34,14 @@ You could choose from three priorities: High, middle, or low. These are stored i
 
 Then tkinter style is configured for each of different widgets like labels and entries. This is the best practice to stylize widgets in ttk (themed tkinter), but it doesn't work so well with some widgets like buttons, hence sometimes style is applied directly to widget with tk instead of applying it indirectly with ttk.
 
+After that, a function is called `first_time()` if there are no tasks in the json file, and `display_tasks()`, if there are tasks to display.
+
+In `display_tasks()` lives a nested function `update_task()`, which whole purpose is to update the state of a particular task when the checkbox is clicked (done or undone), it also updates the state in the database.
+
+Also you can see `delete_task(id)` and `confirm_delete(id)` which manage task deletion. The way I am storing widgets is making a dict for each widget type. For example a dict for buttons, labels, etc. And accessing them using the widget id which is basically the widget's order from 0 to up.
+
+`edit_task(id)` is used to edit task content from name to discription to priority.
+
+and then comes the dicts and the for loop which iterates through all tasks from the json file and display them, if a task has a discription, an additional "Show discription" button is shown. There is a task limit in this app. To be precise (**11**) is the limit. Why is that? Tkinter is a little old, implementing a scrollbar is kind of tricky, and I thought for convinience 11 limit is fine.
+
+And that's it! Feel free to give any feedback on this project or any thoughts that you might have. Thanks for reading!
