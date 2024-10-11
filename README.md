@@ -30,7 +30,7 @@ Then the create task function, which basically creates a new task and then store
 
 Also about the refresh tasks function, it's whole purpose is to delete all the task widgets in a particular window, in order to display updated tasks, with added, deleted, or new tasks.
 
-You could choose from three priorities: High, middle, or low. These are stores in the json file (Note that they must be provided).
+You could choose from three priorities: High, middle, or low. These are stored in the json file (Note that they must be provided).
 
 Then tkinter style is configured for each of different widgets like labels and entries. This is the best practice to stylize widgets in ttk (themed tkinter), but it doesn't work so well with some widgets like buttons, hence sometimes style is applied directly to widget with tk instead of applying it indirectly with ttk.
 
