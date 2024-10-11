@@ -26,7 +26,7 @@ As you go into the main function, first you notice is_first_time, which basicall
 The app will automatically create a folder for tasks named "tasks", in which a json file will be stored, which will contain all your tasks. so the first couple of lines make sure that the tasks folder and the json file are created.
 Then, there is a function to set grid weight automatically in a window. and also you find a function which handles errors in user input (providing no task name or too long task name, no priority, etc ..).
 
-Then the create task function, which basically creates a new task and then stores it in the json file, each task could optionally have a discription so it also stores it there. If no discription provided, discription will be set simply to "" in the json file.
+Then the create task function, which basically creates a new task and then stores it in the json file, each task could optionally have a discription so it also stores it there. If no discription provided, discription will be set simply to `""` in the json file.
 
 Also about the refresh tasks function, it's whole purpose is to delete all the task widgets in a particular window, in order to display updated tasks, with added, deleted, or new tasks.
 
