@@ -1,3 +1,5 @@
+![Todo be app logo](intro.jpeg)
+
 # TODO-BE
 This is a TODO computer application, it is a CS50 Final Project.
 #### Video Demo: [Here](https://youtu.be/K3XU3mLENps?si=mp_lC-Y0z07MrWS5)
